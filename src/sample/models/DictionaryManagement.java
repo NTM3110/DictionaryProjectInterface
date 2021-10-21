@@ -1,8 +1,14 @@
 package sample.models;
 
+import sample.Connection.InternetConnection;
+import sample.Connection.JSONDecoder;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -15,28 +21,20 @@ public class DictionaryManagement {
     public Dictionary getDictionary() {
         return dictionary;
     }
-
+    public void displayWord(){
+        for (Word word : dictionary.getWord_list()) {
+            System.out.println(word.getWord_target());
+        }
+    }
     public void setDictionary(Dictionary dictionary) {
         this.dictionary = dictionary;
     }
-    private boolean checkInput(String inputStr, String outStr){
-        if (inputStr == null || outStr == null ){
+    private boolean checkInput(String inputStr){
+        if (inputStr == null){
             System.out.println("please input double words");
             return false;
         }
         else return true;
-    }
-    public void dictionaryLookUp(){
-        System.out.println("Please enter the word that you want to look up:");
-        String inputStr = input.next();
-        input.nextLine();
-        int keep = 0;
-        for(Word a: dictionary.getWord_list()){
-            if(inputStr.equals(a.getWord_target())){
-              System.out.println("Translated word is:"+ a.getWord_explain());
-              break;
-            }
-        }
     }
     public void  insertFromCommandLine(){
         System.out.println("Input the number of words: ");
@@ -45,88 +43,84 @@ public class DictionaryManagement {
         for(int i = 0;i <number;i++) {
             Word word = new Word();
             String inputStr = null;
-            String outputStr =  null;
-            while (checkInput(inputStr,outputStr)==false) {
+            while (checkInput(inputStr)==false) {
                 inputStr = input.nextLine();
-                outputStr = input.nextLine();
             }
             word.setWord_target(inputStr);
-            word.setWord_explain(outputStr);
             dictionary.addWord(word);
         }
     }
-    public int searchWord(){
-        System.out.println("Enter the word that you want:");
-        String inputStr = input.nextLine();
-        int i=0;
-        int keep=0;
-        boolean checkOccur = false;
+    public Word searchWord(String inputStr){
+        Word word  = new Word();
         for (Word a: dictionary.getWord_list()){
-            if (a.getWord_target().equals(inputStr)){
-                System.out .println("The pair of word is:"+ a.getWord_target()+"-"+a.getWord_explain());
-                keep=i;
-                checkOccur = true;
-                break;
+            if (a.getWord_target().equals(inputStr)) {
+                System.out.println(a.getWord_target());
+                word = a;
             }
-            i++;
         }
-        if (checkOccur ==true ) return keep;
-        else  return dictionary.getWord_list().size();
+        return word;
     }
-    public ArrayList<Word> advancedSearchWord(String inputStr){
+    public ArrayList<Word> advancedSearchWord(String inputStr) throws  NullPointerException{
         Pattern pattern
                 = Pattern.compile(inputStr);
-        int i=0;
-        ArrayList<Word> keep= new ArrayList<Word>();
+        ArrayList<Word> keep= new ArrayList<>();
+        int i =0;
         for (Word a: dictionary.getWord_list()){
-            Matcher matcher = pattern.matcher(a.getWord_target());
-            if (matcher.find()==true && inputStr.charAt(0) == a.getWord_target().charAt(0)){
-                System.out .println("The pair of word is:"+ a.getWord_target()+"-"+a.getWord_explain());
-                keep.add(a);
+            if (a.getWord_target() ==null){
+                System.out.println("There is null word");
             }
-            i++;
+            Matcher matcher= pattern.matcher(a.getWord_target());
+            if (i<10) {
+                if (a.getWord_target().length() >= inputStr.length()) {
+                    String dub = a.getWord_target().substring(0, inputStr.length());
+                    if (matcher.find() == true && inputStr.equals(dub)) {
+//                        System.out.println(a.getWord_target());
+                        keep.add(a);
+                        i++;
+                    }
+                }
+            }
+            else if (i==20) {
+                System.out.println("Out of range!");
+                break;
+            }
         }
         return keep;
     }
     public void deleteWord(){
         System.out.println("You want to delete ?");
-        int index=searchWord();
-        if(index <dictionary.getWord_list().size())
-            dictionary.getWord_list().remove(index);
+//       // int index=searchWord();
+//        if(index <dictionary.getWord_list().size())
+//            dictionary.getWord_list().remove(index);
     }
     public void alterWord(){
-        int index= searchWord();
-        System.out.println(" Are you want to change the target word <Enter 1>   or   the  explain word <Enter 2> ");
-        int option = input.nextInt();
         input.nextLine();
-        switch (option){
-            case  1:
-                System.out.println("Enter the target word that want to change to ");
-                String inputStr = input.nextLine();
-                dictionary.getWord_list().get(index).setWord_target(inputStr);
-            break;
-            case 2:
-                System.out.println("Enter the explain word that want to change to ");
-                String outputStr = input.nextLine();
-                dictionary.getWord_list().get(index).setWord_explain(outputStr);
-            break;
-        }
+        System.out.println("Enter the target word that want to change to ");
+        String inputStr = input.nextLine();
+        //dictionary.getWord_list().get(index).setWord_target(inputStr);
     }
     public void insertFromFile() throws IOException {
-        String path = "C:\\Users\\mdmt3\\OneDrive\\Documents\\RMIT\\Sem2 2021\\Objected Programming Subject\\DictionaryProject\\src\\text\\DemoSrcFile.txt";
+        String path = "C:\\Users\\mdmt3\\OneDrive\\Documents\\RMIT\\Sem2 2021\\Objected Programming Subject\\DictionaryProjectInterface\\src\\sample\\dictionarySrc\\E_V.txt";
         File file = new File(path);
         Scanner sc = new Scanner(file, StandardCharsets.UTF_8);
+        double startTime = System.currentTimeMillis();
         while (sc.hasNext()){
-            String st = sc.nextLine();
-            //Split by -
-            String[] s = st.split(",");
-            System.out.println(s[0]+"-"+s[1]);
-            String inputStr= s[0];
-            String outputStr = s[1];
             Word word = new Word();
-            word.setWord_target(inputStr);
-            word.setWord_explain(outputStr);
+            String st = sc.nextLine();
+            ExtractFileSrc es = new ExtractFileSrc();
+            word = es.getWordSrc(st);
             dictionary.addWord(word);
         }
+        double endTime = System.currentTimeMillis();
+        System.out.println("Duration: "+(endTime-startTime));
+        sc.close();
+    }
+    public  void insertFromFileJSON() throws  IOException{
+        FileReader fileReader = new FileReader("emps.json");
+        BufferedReader bf = new BufferedReader(fileReader);
+        JSONDecoder jsonDecoder = new JSONDecoder();
+        String wordStr = bf.readLine();
+       // System.out.println(wordStr);
+        dictionary.setWork_list(jsonDecoder.Decoder(wordStr));
     }
 }

@@ -1,25 +1,24 @@
 package sample.controller;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import sample.Connection.InternetConnection;
-import sample.models.Dictionary;
-import sample.models.DictionaryManagement;
-import sample.models.Word;
+import sample.models.*;
 
-import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-import  org.controlsfx.control.textfield.TextFields;
+
+import javax.swing.*;
 
 public class Controller implements Initializable {
     @FXML
@@ -31,51 +30,56 @@ public class Controller implements Initializable {
     private VBox list_word;
 
     @FXML
-    private ScrollPane scrollPane;
+    private ScrollPane scrollPane1;
 
     @FXML
     private TextField textField;
+    @FXML
+    private Label wordLabel;
 
     @FXML
     private  Button searchButton;
 
     @FXML
     private TextArea textArea;
-
     private DictionaryManagement dictionaryManagement =  new DictionaryManagement();
     private Dictionary dictionary = new Dictionary();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        dictionary = dictionaryManagement.getDictionary();
         try {
-            dictionaryManagement.insertFromFile();
+            dictionaryManagement.insertFromFileJSON();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (Word a: dictionary.getWord_list()) {
-            Button word = new Button(a.getWord_target());
-            word.setMinWidth(270);
-            word.setMinHeight(45);
-            word.setStyle("-fx-background-color: #E1E1E1");
-            word.setPadding(new Insets(0,0,10,0));
-            list_word.getChildren().add(word);
-            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-            scrollPane.setContent(list_word);
-        }
+        textArea.setEditable(false);
 }
 
-    public void doSearch(){
-        String inputStr = textField.getText();
-        InternetConnection ic = new InternetConnection();
-        String data = ic.getOnlineData(inputStr);
-        if (data.equalsIgnoreCase("error"))
-        {
-            textArea.setText("Something is WRONG");
-        }
-        else textArea.setText(data);
+    public void doSearch(String inputStr){
+       Word word =dictionaryManagement.searchWord(inputStr);
+//        System.out.println(word.getWord_target());
+       String wordStr = "";
+       for (String a: word.getMeaning().keySet()){
+           if (!a.equals("noType") && !a.equals("noEx"))    wordStr+=a+"\n\n";
+           for (Description b : word.getMeaning().get(a)){
+               wordStr+= b.getDefinition()+"\n";
+               for (String c: b.getExample()){
+                   wordStr+=c+"\n";
+               }
+           }
+       }
+       textArea.setText(wordStr);
+       wordLabel.setText(word.getWord_target());
+       wordLabel.setFont(Font.font(24));
+       wordLabel.setTextFill(Color.BLUE);
     }
+    void addClickListener(Label label){
+        label.setOnMouseClicked(mouseEvent -> {
+            String labelStr = label.getText();
+            doSearch(labelStr);
+        });
+    }
+
     public void displayWord(){
         list_word.getChildren().clear();
         if(!textField.getText().isEmpty()) {
@@ -83,16 +87,18 @@ public class Controller implements Initializable {
             ArrayList<Word> displayWord = dictionaryManagement.advancedSearchWord(inputStr);
             for (Word a : displayWord) {
                 Label word = new Label(a.getWord_target());
+                addClickListener(word);
                 word.setMinWidth(270);
                 word.setMinHeight(45);
-                word.setStyle("-fx-background-color: #E1E1E1");
+                //word.setStyle("-fx-background-color: #E1E1E1");
                 word.setStyle("-fx-text-alignment: left");
-                word.setPadding(new Insets(0, 0, 10, 0));
+                word.setPadding(new Insets(0, 0, 10, 5));
+                word.setBorder(new Border(new BorderStroke(Color.AQUAMARINE, BorderStrokeStyle.SOLID, new CornerRadii(1.0), BorderStroke.THICK)));
                 list_word.getChildren().add(word);
-                scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-                scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+                scrollPane1.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+                scrollPane1.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             }
-            scrollPane.setContent(list_word);
+            scrollPane1.setContent(list_word);
         }
     }
 

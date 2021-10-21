@@ -1,0 +1,7 @@
+cat,mèo
+dog,chó
+keyboard,bàn phím
+transport,vận chuyển
+translate,dịch
+transform,biến đổi
+transit,chuyển tiếp
